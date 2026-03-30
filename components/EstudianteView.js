@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, ScrollView, Text, TextInput, View } from 'react-native';
+import { Button, Text, TextInput, View } from 'react-native';
 
 import { calcularAsistencia, registrarAsistencia } from '../controllers/asistenciaController';
 import { obtenerClases } from '../models/clases';
@@ -38,54 +38,33 @@ export default function EstudianteView() {
   };
 
   return (
-    <ScrollView style={{ padding: 15, backgroundColor: '#f5f5f5' }}>
+    <View style={{ padding: 15, backgroundColor: '#f5f5f5' }}>
 
       <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 10 }}>
          Panel Estudiante
       </Text>
 
-      {/* FORMULARIO */}
       <View style={styles.card}>
-        <Text style={styles.title}>Registro de Asistencia</Text>
+        <Text style={styles.title}>Registro</Text>
 
-        <TextInput
-          placeholder="ID Estudiante"
-          value={id}
-          onChangeText={setId}
-          style={styles.input}
-        />
-
-        <TextInput
-          placeholder="Celular"
-          value={celular}
-          onChangeText={setCelular}
-          style={styles.input}
-        />
-
-        <TextInput
-          placeholder="Pegar QR aquí"
-          value={qr}
-          onChangeText={setQr}
-          style={styles.input}
-        />
+        <TextInput placeholder="ID Estudiante" value={id} onChangeText={setId} style={styles.input} />
+        <TextInput placeholder="Celular" value={celular} onChangeText={setCelular} style={styles.input} />
+        <TextInput placeholder="Pegar QR" value={qr} onChangeText={setQr} style={styles.input} />
 
         <Button title="Registrar Asistencia" onPress={registrar} />
       </View>
 
-      {/* RESULTADO */}
       <View style={styles.card}>
         <Text style={styles.title}>Resultado</Text>
 
-        <Text style={{ fontSize: 16 }}>
-          {mensaje}
-        </Text>
+        <Text>{mensaje}</Text>
 
         <Text style={{ marginTop: 10, fontWeight: 'bold' }}>
-           % Asistencia: {porcentaje}%
+          % Asistencia: {porcentaje}%
         </Text>
       </View>
 
-    </ScrollView>
+    </View>
   );
 }
 
@@ -102,10 +81,7 @@ const styles = {
     backgroundColor: '#fff',
     padding: 15,
     borderRadius: 12,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5
+    marginBottom: 15
   },
   title: {
     fontWeight: 'bold',
