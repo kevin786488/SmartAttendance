@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Text, TextInput, View } from 'react-native';
+import { Button, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { calcularAsistencia, registrarAsistencia } from '../controllers/asistenciaController';
 import { obtenerClases } from '../models/clases';
@@ -21,7 +21,7 @@ export default function EstudianteView() {
       return;
     }
 
-    const clase = clases[0]; // usamos la primera como prueba
+    const clase = clases[0];
 
     const resultado = registrarAsistencia({
       estudianteId: id,
@@ -32,48 +32,84 @@ export default function EstudianteView() {
 
     setMensaje(resultado.mensaje);
 
-    // calcular porcentaje
     const total = clases.length;
     const porc = calcularAsistencia(id, total);
     setPorcentaje(porc);
   };
 
   return (
-    <View style={{ padding: 20 }}>
+    <ScrollView style={{ padding: 15, backgroundColor: '#f5f5f5' }}>
 
-      <Text style={{ fontSize: 18 }}>Registro Estudiante</Text>
-
-      <TextInput
-        placeholder="ID"
-        value={id}
-        onChangeText={setId}
-        style={{ borderWidth: 1, marginBottom: 10 }}
-      />
-
-      <TextInput
-        placeholder="Celular"
-        value={celular}
-        onChangeText={setCelular}
-        style={{ borderWidth: 1, marginBottom: 10 }}
-      />
-
-      <TextInput
-        placeholder="Pegar QR"
-        value={qr}
-        onChangeText={setQr}
-        style={{ borderWidth: 1, marginBottom: 10 }}
-      />
-
-      <Button title="Registrar Asistencia" onPress={registrar} />
-
-      <Text style={{ marginTop: 20 }}>
-        {mensaje}
+      <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 10 }}>
+         Panel Estudiante
       </Text>
 
-      <Text style={{ marginTop: 10 }}>
-        % Asistencia: {porcentaje}%
-      </Text>
+      {/* FORMULARIO */}
+      <View style={styles.card}>
+        <Text style={styles.title}>Registro de Asistencia</Text>
 
-    </View>
+        <TextInput
+          placeholder="ID Estudiante"
+          value={id}
+          onChangeText={setId}
+          style={styles.input}
+        />
+
+        <TextInput
+          placeholder="Celular"
+          value={celular}
+          onChangeText={setCelular}
+          style={styles.input}
+        />
+
+        <TextInput
+          placeholder="Pegar QR aquí"
+          value={qr}
+          onChangeText={setQr}
+          style={styles.input}
+        />
+
+        <Button title="Registrar Asistencia" onPress={registrar} />
+      </View>
+
+      {/* RESULTADO */}
+      <View style={styles.card}>
+        <Text style={styles.title}>Resultado</Text>
+
+        <Text style={{ fontSize: 16 }}>
+          {mensaje}
+        </Text>
+
+        <Text style={{ marginTop: 10, fontWeight: 'bold' }}>
+           % Asistencia: {porcentaje}%
+        </Text>
+      </View>
+
+    </ScrollView>
   );
 }
+
+const styles = {
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 10,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#fff'
+  },
+  card: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5
+  },
+  title: {
+    fontWeight: 'bold',
+    marginBottom: 10,
+    fontSize: 16
+  }
+};

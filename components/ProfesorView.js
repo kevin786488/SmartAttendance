@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Button, FlatList, Text, TextInput, View } from 'react-native';
+import { Button, FlatList, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { registrarAsistenciaManual } from '../controllers/asistenciaController';
 import { agregarClase, obtenerClases } from '../models/clases';
-import { agregarEstudiante } from '../models/estudiantes';
+import { agregarEstudiante, obtenerEstudiantes } from '../models/estudiantes';
 import { exportarCSV } from '../utils/exportExcel';
 import { generarQR } from '../utils/qrGenerator';
 
@@ -20,22 +20,14 @@ export default function ProfesorView() {
   const [estudianteManual, setEstudianteManual] = useState('');
   const [mensajeManual, setMensajeManual] = useState('');
 
-  // NUEVOS estados para estudiantes
   const [idEst, setIdEst] = useState('');
   const [nombreEst, setNombreEst] = useState('');
   const [celularEst, setCelularEst] = useState('');
+  const [listaEstudiantes, setListaEstudiantes] = useState([]);
 
   const crearClase = () => {
-
-    if (!nombre) {
-      alert('El nombre es obligatorio');
-      return;
-    }
-
-    if (horaInicio >= horaFin) {
-      alert('Hora inicio debe ser menor que hora fin');
-      return;
-    }
+    if (!nombre) return alert('Nombre obligatorio');
+    if (horaInicio >= horaFin) return alert('Hora inválida');
 
     const nuevaClase = {
       id: Date.now().toString(),
@@ -53,42 +45,26 @@ export default function ProfesorView() {
   };
 
   const crearQR = () => {
+    if (clases.length === 0) return alert('No hay clases');
 
-    if (clases.length === 0) {
-      alert('No hay clases');
-      return;
-    }
-
-    const clase = clases[0];
-    const qrGenerado = generarQR(clase.id);
-
+    const qrGenerado = generarQR(clases[0].id);
     setQr(qrGenerado);
   };
 
   const registrarManual = () => {
+    if (clases.length === 0) return setMensajeManual('No hay clases');
 
-    if (clases.length === 0) {
-      setMensajeManual('No hay clases');
-      return;
-    }
-
-    const clase = clases[0];
-
-    const resultado = registrarAsistenciaManual({
+    const res = registrarAsistenciaManual({
       estudianteId: estudianteManual,
-      clase
+      clase: clases[0]
     });
 
-    setMensajeManual(resultado.mensaje);
+    setMensajeManual(res.mensaje);
   };
 
-  // NUEVA función agregar estudiante
   const crearEstudiante = () => {
-
-    if (!idEst || !nombreEst || !celularEst) {
-      alert('Todos los campos son obligatorios');
-      return;
-    }
+    if (!idEst || !nombreEst || !celularEst)
+      return alert('Campos obligatorios');
 
     agregarEstudiante({
       id: idEst,
@@ -96,84 +72,127 @@ export default function ProfesorView() {
       celular: celularEst
     });
 
-    alert('Estudiante agregado');
+    setListaEstudiantes(obtenerEstudiantes());
 
     setIdEst('');
     setNombreEst('');
     setCelularEst('');
   };
 
-  return (
-    <View style={{ padding: 20 }}>
+  const cargarEstudiantes = () => {
+    setListaEstudiantes(obtenerEstudiantes());
+  };
 
-      <Text style={{ fontSize: 18 }}>Panel Profesor</Text>
+  return (
+    <ScrollView style={{ padding: 15, backgroundColor: '#f5f5f5' }}>
+
+      <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 10 }}>
+         Panel Profesor
+      </Text>
 
       {/* CREAR CLASE */}
-      <TextInput placeholder="Nombre" value={nombre} onChangeText={setNombre} style={{ borderWidth: 1, marginBottom: 10 }} />
-      <TextInput placeholder="Hora inicio (08:00)" value={horaInicio} onChangeText={setHoraInicio} style={{ borderWidth: 1, marginBottom: 10 }} />
-      <TextInput placeholder="Hora fin (10:00)" value={horaFin} onChangeText={setHoraFin} style={{ borderWidth: 1, marginBottom: 10 }} />
+      <View style={{ backgroundColor: '#fff', padding: 10, borderRadius: 10, marginBottom: 15 }}>
+        <Text style={{ fontWeight: 'bold' }}>Crear Clase</Text>
 
-      <Button title="Crear Clase" onPress={crearClase} />
+        <TextInput placeholder="Nombre" value={nombre} onChangeText={setNombre} style={styles.input} />
+        <TextInput placeholder="Hora inicio (08:00)" value={horaInicio} onChangeText={setHoraInicio} style={styles.input} />
+        <TextInput placeholder="Hora fin (10:00)" value={horaFin} onChangeText={setHoraFin} style={styles.input} />
 
-      <FlatList
-        data={clases}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Text>{item.nombre} ({item.horaInicio} - {item.horaFin})</Text>
+        <Button title="Crear Clase" onPress={crearClase} />
+      </View>
+
+      {/* LISTA CLASES */}
+      <View style={styles.card}>
+        <Text style={styles.title}> Clases</Text>
+
+        <FlatList
+          data={clases}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <Text style={styles.item}>
+              {item.nombre} ({item.horaInicio}-{item.horaFin})
+            </Text>
+          )}
+        />
+      </View>
+
+      {/* QR */}
+      <View style={styles.card}>
+        <Button title="Generar QR" onPress={crearQR} />
+
+        {qr !== '' && (
+          <View style={{ alignItems: 'center', marginTop: 10 }}>
+            <QRCode value={qr} size={180} />
+            <Text selectable style={{ fontSize: 10 }}>{qr}</Text>
+          </View>
         )}
-      />
+      </View>
 
-      <Button title="Generar QR" onPress={crearQR} />
-
-      {qr !== '' && (
-        <View style={{ marginTop: 20, alignItems: 'center' }}>
-          <QRCode value={qr} size={200} />
-          <Text selectable>{qr}</Text>
-        </View>
-      )}
-
-      <Button title="Exportar CSV" onPress={() => exportarCSV(clases)} />
+      {/* EXPORTAR */}
+      <View style={styles.card}>
+        <Button title="Exportar CSV" onPress={() => exportarCSV(clases)} />
+      </View>
 
       {/* REGISTRO MANUAL */}
-      <Text style={{ marginTop: 20 }}>Registro Manual</Text>
+      <View style={styles.card}>
+        <Text style={styles.title}>Registro Manual</Text>
 
-      <TextInput
-        placeholder="ID Estudiante"
-        value={estudianteManual}
-        onChangeText={setEstudianteManual}
-        style={{ borderWidth: 1, marginBottom: 10 }}
-      />
+        <TextInput placeholder="ID Estudiante" value={estudianteManual} onChangeText={setEstudianteManual} style={styles.input} />
+        <Button title="Registrar" onPress={registrarManual} />
+        <Text>{mensajeManual}</Text>
+      </View>
 
-      <Button title="Registrar Manual" onPress={registrarManual} />
+      {/* AGREGAR ESTUDIANTE */}
+      <View style={styles.card}>
+        <Text style={styles.title}> Agregar Estudiante</Text>
 
-      <Text>{mensajeManual}</Text>
+        <TextInput placeholder="ID" value={idEst} onChangeText={setIdEst} style={styles.input} />
+        <TextInput placeholder="Nombre" value={nombreEst} onChangeText={setNombreEst} style={styles.input} />
+        <TextInput placeholder="Celular" value={celularEst} onChangeText={setCelularEst} style={styles.input} />
 
-      {/* NUEVO: AGREGAR ESTUDIANTE */}
-      <Text style={{ marginTop: 20 }}>Agregar Estudiante</Text>
+        <Button title="Agregar" onPress={crearEstudiante} />
+      </View>
 
-      <TextInput
-        placeholder="ID"
-        value={idEst}
-        onChangeText={setIdEst}
-        style={{ borderWidth: 1, marginBottom: 10 }}
-      />
+      {/* LISTA ESTUDIANTES */}
+      <View style={styles.card}>
+        <Button title="Ver Estudiantes" onPress={cargarEstudiantes} />
 
-      <TextInput
-        placeholder="Nombre"
-        value={nombreEst}
-        onChangeText={setNombreEst}
-        style={{ borderWidth: 1, marginBottom: 10 }}
-      />
+        <FlatList
+          data={listaEstudiantes}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <Text style={styles.item}>
+              {item.id} - {item.nombre} ({item.celular})
+            </Text>
+          )}
+        />
+      </View>
 
-      <TextInput
-        placeholder="Celular"
-        value={celularEst}
-        onChangeText={setCelularEst}
-        style={{ borderWidth: 1, marginBottom: 10 }}
-      />
-
-      <Button title="Agregar Estudiante" onPress={crearEstudiante} />
-
-    </View>
+    </ScrollView>
   );
 }
+
+const styles = {
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 10,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#fff'
+  },
+  card: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 15
+  },
+  title: {
+    fontWeight: 'bold',
+    marginBottom: 5
+  },
+  item: {
+    padding: 5,
+    borderBottomWidth: 0.5
+  }
+};
