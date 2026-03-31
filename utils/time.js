@@ -2,12 +2,12 @@
 
 /**
  * Verifica si la hora actual está dentro del horario de la clase
- * Versión con modo desarrollo (fácil de activar/desactivar)
+ * Incluye modo desarrollo para facilitar las pruebas
  */
 export const estaEnHorario = (horaInicio, horaFin) => {
   
   // ==================== MODO DESARROLLO ====================
-  // Cambia a "false" cuando quieras activar la validación real
+  // Cambia a "false" para activar la validación real de horario
   const MODO_DESARROLLO = true;
 
   if (MODO_DESARROLLO) {
@@ -17,12 +17,12 @@ export const estaEnHorario = (horaInicio, horaFin) => {
   }
   // ========================================================
 
-  // ==================== VERSIÓN REAL (cuando termines de probar) ====================
+  // ==================== VERSIÓN REAL ====================
   try {
     const ahora = new Date();
     const minutosActual = ahora.getHours() * 60 + ahora.getMinutes();
 
-    // Convertir horaInicio y horaFin a minutos
+    // Convertir horaInicio y horaFin a minutos totales
     const [hInicio, mInicio = 0] = horaInicio.split(':').map(n => parseInt(n, 10));
     const [hFin, mFin = 0] = horaFin.split(':').map(n => parseInt(n, 10));
 

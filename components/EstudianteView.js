@@ -6,12 +6,14 @@ import { obtenerClases } from '../models/clases';
 
 export default function EstudianteView() {
 
+  // Estados del formulario de registro
   const [id, setId] = useState('');
   const [celular, setCelular] = useState('');
   const [qr, setQr] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [porcentaje, setPorcentaje] = useState('');
 
+  // Registra la asistencia del estudiante usando el código QR
   const registrar = () => {
     const clases = obtenerClases();
 
@@ -31,6 +33,7 @@ export default function EstudianteView() {
 
     setMensaje(resultado.mensaje);
 
+    // Calcula y actualiza el porcentaje de asistencia
     const total = clases.length;
     const porc = calcularAsistencia(id, total);
     setPorcentaje(porc);
@@ -43,13 +46,13 @@ export default function EstudianteView() {
       showsVerticalScrollIndicator={true}
     >
 
-      {/* ==================== HEADER MODERNO ==================== */}
+      {/* Header */}
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Panel Estudiante</Text>
         <Text style={styles.headerSubtitle}>Registro de Asistencia QR</Text>
       </View>
-      {/* ======================================================= */}
 
+      {/* Formulario de Registro */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Registro de Asistencia</Text>
 
@@ -80,6 +83,7 @@ export default function EstudianteView() {
         </TouchableOpacity>
       </View>
 
+      {/* Resultado del Registro */}
       <View style={styles.resultCard}>
         <Text style={styles.cardTitle}>Resultado del Registro</Text>
         
@@ -104,10 +108,9 @@ export default function EstudianteView() {
 const styles = {
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
-    // padding: 20,   ← quitado de aquí porque ahora está en contentContainerStyle
+    backgroundColor: '#f8fafc',
   },
-  // ==================== HEADER MODERNO ====================
+  // Header
   headerContainer: {
     alignItems: 'center',
     marginBottom: 32,
@@ -116,44 +119,45 @@ const styles = {
   headerTitle: {
     fontSize: 34,
     fontWeight: '800',
-    color: '#ffffff',
+    color: '#0f172a',
     letterSpacing: -1,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#94a3b8',
+    color: '#64748b',
     fontWeight: '500',
   },
-  // =======================================================
 
   card: {
-    backgroundColor: '#1e2937',
+    backgroundColor: '#ffffff',
     borderRadius: 24,
     padding: 24,
     marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.08,
     shadowRadius: 20,
-    elevation: 15,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   cardTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#e2e8f0',
+    color: '#1e2937',
     marginBottom: 20,
     textAlign: 'center',
   },
   input: {
-    backgroundColor: '#334155',
+    backgroundColor: '#f1f5f9',
     borderRadius: 16,
     padding: 18,
     fontSize: 17,
-    color: '#f1f5f9',
+    color: '#0f172a',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#475569',
+    borderColor: '#cbd5e1',
   },
   qrInput: {
     height: 100,
@@ -167,7 +171,7 @@ const styles = {
     alignItems: 'center',
     shadowColor: '#2563eb',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 12,
   },
@@ -178,14 +182,16 @@ const styles = {
     letterSpacing: 0.5,
   },
   resultCard: {
-    backgroundColor: '#1e2937',
+    backgroundColor: '#ffffff',
     borderRadius: 24,
     padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.08,
     shadowRadius: 20,
-    elevation: 15,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   message: {
     fontSize: 17.5,
@@ -194,22 +200,22 @@ const styles = {
     lineHeight: 26,
   },
   success: {
-    color: '#34d399',
+    color: '#10b981',
     fontWeight: '600',
   },
   error: {
-    color: '#f87171',
+    color: '#ef4444',
     fontWeight: '600',
   },
   percentage: {
     fontSize: 20,
-    color: '#94a3b8',
+    color: '#64748b',
     textAlign: 'center',
     marginTop: 16,
   },
   percentageNumber: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#60a5fa',
+    color: '#3b82f6',
   }
 };
