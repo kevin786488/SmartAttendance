@@ -1,8 +1,12 @@
-import { useState } from 'react';
+// ProfesorView.js
+
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Clipboard,
   FlatList,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,48 +25,71 @@ import QRCode from 'react-native-qrcode-svg';
 
 export default function ProfesorView() {
 
-  // Estados para gestión de clases y QR
+  // Estados para crear clase
   const [nombre, setNombre] = useState('');
-  const [horaInicio, setHoraInicio] = useState('');
-  const [horaFin, setHoraFin] = useState('');
+  const [horaInicio, setHoraInicio] = useState(new Date());
+  const [horaFin, setHoraFin] = useState(new Date());
+  const [showInicioPicker, setShowInicioPicker] = useState(false);
+  const [showFinPicker, setShowFinPicker] = useState(false);
+
+  // Estados para gestión de clases y QR
   const [clases, setClases] = useState([]);
+  const [claseSeleccionada, setClaseSeleccionada] = useState(null);
   const [qr, setQr] = useState('');
 
-  // Estados para registro manual de asistencia
+  // Estados para registro manual
   const [estudianteManual, setEstudianteManual] = useState('');
   const [mensajeManual, setMensajeManual] = useState('');
 
-  // Estados para agregar estudiantes
+  // Estados para agregar estudiante
   const [idEst, setIdEst] = useState('');
   const [nombreEst, setNombreEst] = useState('');
   const [celularEst, setCelularEst] = useState('');
   const [listaEstudiantes, setListaEstudiantes] = useState([]);
 
-  // Refresca la lista de clases desde el modelo
-  const refrescarClases = () => setClases(obtenerClases());
-
-  // Crea una nueva clase y actualiza la lista
-  const crearClase = () => {
-    if (!nombre) return Alert.alert('Error', 'Nombre obligatorio');
-    if (horaInicio >= horaFin) return Alert.alert('Error', 'Hora inválida');
-
-    const nuevaClase = { id: Date.now().toString(), nombre, horaInicio, horaFin };
-    agregarClase(nuevaClase);
-    refrescarClases();
-
-    setNombre('');
-    setHoraInicio('');
-    setHoraFin('');
+  // Refresca la lista de clases y selecciona la primera si es necesario
+  const refrescarClases = () => {
+    const lista = obtenerClases();
+    setClases(lista);
+    if (lista.length > 0 && (!claseSeleccionada || !lista.find(c => c.id === claseSeleccionada?.id))) {
+      setClaseSeleccionada(lista[0]);
+    }
   };
 
-  // Genera el código QR para la primera clase
+  // Formatea hora a "HH:mm"
+  const formatHora = (date) => {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  // Crear nueva clase
+  const crearClase = () => {
+    if (!nombre) return Alert.alert('Error', 'Nombre de la clase es obligatorio');
+
+    const nuevaClase = {
+      id: Date.now().toString(),
+      nombre,
+      horaInicio: formatHora(horaInicio),
+      horaFin: formatHora(horaFin),
+    };
+
+    agregarClase(nuevaClase);
+    refrescarClases();
+    setNombre('');
+    Alert.alert('Éxito', 'Clase creada correctamente');
+  };
+
+  // Generar código QR para la clase seleccionada
   const crearQR = () => {
-    if (clases.length === 0) return Alert.alert('Error', 'No hay clases creadas');
-    const qrGenerado = generarQR(clases[0].id);
+    if (!claseSeleccionada) 
+      return Alert.alert('Error', 'Primero selecciona una clase');
+
+    const qrGenerado = generarQR(claseSeleccionada.id);
     setQr(qrGenerado);
   };
 
-  // Copia el código QR al portapapeles
+  // Copiar QR al portapapeles
   const copiarQR = async () => {
     if (!qr) return Alert.alert('Sin QR', 'Primero genera un código QR');
     try {
@@ -73,14 +100,19 @@ export default function ProfesorView() {
     }
   };
 
-  // Registra asistencia manual para un estudiante
+  // Registro manual de asistencia
   const registrarManual = () => {
-    if (clases.length === 0) return setMensajeManual('No hay clases');
-    const res = registrarAsistenciaManual({ estudianteId: estudianteManual, clase: clases[0] });
+    if (!claseSeleccionada) return setMensajeManual('Primero selecciona una clase');
+    if (!estudianteManual) return setMensajeManual('Ingresa el ID del estudiante');
+
+    const res = registrarAsistenciaManual({ 
+      estudianteId: estudianteManual, 
+      clase: claseSeleccionada 
+    });
     setMensajeManual(res.mensaje);
   };
 
-  // Agrega un nuevo estudiante con validación de ID duplicado
+  // Crear nuevo estudiante
   const crearEstudiante = () => {
     if (!idEst || !nombreEst || !celularEst) 
       return Alert.alert('Error', 'Todos los campos son obligatorios');
@@ -88,64 +120,129 @@ export default function ProfesorView() {
     try {
       agregarEstudiante({ id: idEst, nombre: nombreEst, celular: celularEst });
       setListaEstudiantes(obtenerEstudiantes());
-
       setIdEst(''); 
       setNombreEst(''); 
       setCelularEst('');
-
       Alert.alert('Éxito', 'Estudiante agregado correctamente');
     } catch (error) {
       Alert.alert('Error', error.message);
     }
   };
 
-  // Carga la lista actual de estudiantes
+  // Cargar lista de estudiantes
   const cargarEstudiantes = () => setListaEstudiantes(obtenerEstudiantes());
+
+  // Cargar clases al montar el componente
+  useEffect(() => {
+    refrescarClases();
+  }, []);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }}>
       
-      {/* Header */}
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Panel Profesor</Text>
         <Text style={styles.headerSubtitle}>Gestión de Clases y Asistencia</Text>
       </View>
 
-      {/* Crear Clase */}
+      {/* Crear Nueva Clase */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Crear Nueva Clase</Text>
-        <TextInput placeholder="Nombre de la clase" value={nombre} onChangeText={setNombre} style={styles.input} />
-        <TextInput placeholder="Hora inicio (08:00)" value={horaInicio} onChangeText={setHoraInicio} style={styles.input} />
-        <TextInput placeholder="Hora fin (10:00)" value={horaFin} onChangeText={setHoraFin} style={styles.input} />
+        
+        <TextInput 
+          placeholder="Nombre de la clase" 
+          value={nombre} 
+          onChangeText={setNombre} 
+          style={styles.input} 
+        />
+
+        <Text style={styles.label}>Hora de Inicio</Text>
+        <TouchableOpacity style={styles.timeButton} onPress={() => setShowInicioPicker(true)}>
+          <Text style={styles.timeText}>{formatHora(horaInicio)}</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.label}>Hora de Fin</Text>
+        <TouchableOpacity style={styles.timeButton} onPress={() => setShowFinPicker(true)}>
+          <Text style={styles.timeText}>{formatHora(horaFin)}</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.primaryButton} onPress={crearClase}>
           <Text style={styles.buttonText}>CREAR CLASE</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Clases Creadas */}
+      {/* DateTimePickers */}
+      {showInicioPicker && (
+        <DateTimePicker
+          value={horaInicio}
+          mode="time"
+          is24Hour={true}
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, selectedDate) => {
+            setShowInicioPicker(false);
+            if (selectedDate) setHoraInicio(selectedDate);
+          }}
+        />
+      )}
+
+      {showFinPicker && (
+        <DateTimePicker
+          value={horaFin}
+          mode="time"
+          is24Hour={true}
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, selectedDate) => {
+            setShowFinPicker(false);
+            if (selectedDate) setHoraFin(selectedDate);
+          }}
+        />
+      )}
+
+      {/* Seleccionar Clase y Generar QR */}
       <View style={styles.card}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Text style={styles.cardTitle}>Clases Creadas</Text>
+          <Text style={styles.cardTitle}>Seleccionar Clase</Text>
           <TouchableOpacity style={styles.smallButton} onPress={refrescarClases}>
             <Text style={styles.smallButtonText}>Refrescar</Text>
           </TouchableOpacity>
         </View>
-        <FlatList
-          data={clases}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <Text style={styles.item}>{item.nombre} ({item.horaInicio} - {item.horaFin})</Text>}
-          scrollEnabled={false}
-        />
-      </View>
 
-      {/* Generar QR */}
-      <View style={styles.card}>
-        <TouchableOpacity style={styles.primaryButton} onPress={crearQR}>
+        {clases.length === 0 ? (
+          <Text style={styles.emptyText}>Aún no hay clases creadas</Text>
+        ) : (
+          <View style={styles.pickerContainer}>
+            {clases.map((clase) => (
+              <TouchableOpacity
+                key={clase.id}
+                style={[
+                  styles.claseItem,
+                  claseSeleccionada?.id === clase.id && styles.claseItemSelected
+                ]}
+                onPress={() => setClaseSeleccionada(clase)}
+              >
+                <Text style={[
+                  styles.claseText,
+                  claseSeleccionada?.id === clase.id && styles.claseTextSelected
+                ]}>
+                  {clase.nombre} ({clase.horaInicio} - {clase.horaFin})
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        <TouchableOpacity 
+          style={[styles.primaryButton, { marginTop: 20 }]} 
+          onPress={crearQR}
+          disabled={!claseSeleccionada}
+        >
           <Text style={styles.buttonText}>GENERAR CÓDIGO QR</Text>
         </TouchableOpacity>
+      </View>
 
-        {qr !== '' && (
+      {/* Mostrar QR generado */}
+      {qr !== '' && (
+        <View style={styles.card}>
           <View style={styles.qrContainer}>
             <QRCode value={qr} size={210} />
             <Text selectable style={styles.qrText}>{qr}</Text>
@@ -153,8 +250,8 @@ export default function ProfesorView() {
               <Text style={styles.buttonText}>COPIAR CÓDIGO QR</Text>
             </TouchableOpacity>
           </View>
-        )}
-      </View>
+        </View>
+      )}
 
       {/* Exportar CSV */}
       <View style={styles.card}>
@@ -166,15 +263,24 @@ export default function ProfesorView() {
       {/* Registro Manual */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Registro Manual</Text>
+        <Text style={styles.subtitle}>
+          Clase: {claseSeleccionada ? claseSeleccionada.nombre : 'Ninguna seleccionada'}
+        </Text>
+        
         <TextInput 
           placeholder="ID del Estudiante" 
           value={estudianteManual} 
           onChangeText={setEstudianteManual} 
           style={styles.input} 
         />
-        <TouchableOpacity style={styles.primaryButton} onPress={registrarManual}>
+        <TouchableOpacity 
+          style={styles.primaryButton} 
+          onPress={registrarManual}
+          disabled={!claseSeleccionada}
+        >
           <Text style={styles.buttonText}>REGISTRAR ASISTENCIA MANUAL</Text>
         </TouchableOpacity>
+        
         {mensajeManual !== '' && (
           <Text style={[styles.message, mensajeManual.includes('registrada') ? styles.success : styles.error]}>
             {mensajeManual}
@@ -218,29 +324,12 @@ export default function ProfesorView() {
   );
 }
 
+// ==================== ESTILOS ====================
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  // Header
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 32,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: '#0f172a',
-    letterSpacing: -1.2,
-    marginBottom: 6,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: '500',
-  },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  headerContainer: { alignItems: 'center', marginBottom: 32, paddingVertical: 12 },
+  headerTitle: { fontSize: 34, fontWeight: '800', color: '#0f172a', letterSpacing: -1.2 },
+  headerSubtitle: { fontSize: 16, color: '#64748b', fontWeight: '500' },
 
   card: {
     backgroundColor: '#ffffff',
@@ -255,12 +344,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
-  cardTitle: {
-    fontSize: 21,
-    fontWeight: '700',
-    color: '#1e2937',
-    marginBottom: 18,
-  },
+  cardTitle: { fontSize: 21, fontWeight: '700', color: '#1e2937', marginBottom: 18 },
+  label: { fontSize: 16, fontWeight: '600', color: '#475569', marginBottom: 8, marginTop: 12 },
   input: {
     backgroundColor: '#f1f5f9',
     borderRadius: 16,
@@ -271,13 +356,37 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#cbd5e1',
   },
-  item: {
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    fontSize: 16,
-    color: '#334155',
+  timeButton: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 16,
+    padding: 17,
+    borderWidth: 1.5,
+    borderColor: '#cbd5e1',
+    marginBottom: 16,
+    alignItems: 'center',
   },
+  timeText: { fontSize: 18, fontWeight: '600', color: '#1e2937' },
+
+  pickerContainer: { gap: 10 },
+  claseItem: {
+    padding: 16,
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+  },
+  claseItemSelected: { backgroundColor: '#dbeafe', borderColor: '#3b82f6' },
+  claseText: { fontSize: 16, color: '#334155' },
+  claseTextSelected: { color: '#1e40af', fontWeight: '600' },
+
+  smallButton: {
+    backgroundColor: '#64748b',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  smallButtonText: { color: '#f8fafc', fontSize: 15, fontWeight: '600' },
+
   qrContainer: {
     alignItems: 'center',
     marginTop: 24,
@@ -287,23 +396,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
-  qrText: {
-    fontSize: 13,
-    color: '#64748b',
-    marginVertical: 18,
-    textAlign: 'center',
-  },
+  qrText: { fontSize: 13, color: '#64748b', marginVertical: 18, textAlign: 'center' },
+
   primaryButton: {
     backgroundColor: '#2563eb',
     paddingVertical: 18,
     borderRadius: 16,
     marginTop: 12,
     alignItems: 'center',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 12,
   },
   secondaryButton: {
     backgroundColor: '#64748b',
@@ -312,33 +412,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  smallButton: {
-    backgroundColor: '#64748b',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  secondaryButtonText: {
-    color: '#f8fafc',
+  buttonText: { color: '#ffffff', fontSize: 17, fontWeight: '700' },
+  secondaryButtonText: { color: '#f8fafc', fontSize: 16, fontWeight: '600' },
+  subtitle: { fontSize: 16, color: '#64748b', marginBottom: 12 },
+  item: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
     fontSize: 16,
-    fontWeight: '600',
+    color: '#334155',
   },
-  smallButtonText: {
-    color: '#f8fafc',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  message: {
-    marginTop: 14,
-    fontSize: 17,
-    textAlign: 'center',
-  },
+  emptyText: { color: '#64748b', fontStyle: 'italic', textAlign: 'center', padding: 20 },
+  message: { marginTop: 14, fontSize: 17, textAlign: 'center' },
   success: { color: '#10b981', fontWeight: '600' },
   error: { color: '#ef4444', fontWeight: '600' },
 });

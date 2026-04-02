@@ -1,3 +1,5 @@
+// app/app.js   (o Index.js)
+
 import { useState } from 'react';
 import {
   Dimensions,
@@ -7,109 +9,115 @@ import {
   View
 } from 'react-native';
 
+import { AsistenciaProvider } from '../context/AsistenciaContext';
+
 import EstudianteView from '../components/EstudianteView';
 import ProfesorView from '../components/ProfesorView';
-import ResultadoView from '../components/ResultadoView';
+import ResultadoView from '../components/ResultadoView'; // Nota: antes estaba como ResultadosView
 
-// Obtenemos el ancho de la pantalla para calcular el tamaño del menú
 const { width } = Dimensions.get('window');
 
 export default function Index() {
 
-  // Estado que controla qué vista se muestra actualmente (profesor, estudiante o resultado)
+  // Estado que controla qué pantalla se muestra
   const [vista, setVista] = useState('profesor');
 
-  // Estado que controla si el menú hamburguesa está abierto o cerrado
+  // Estado para controlar si el menú hamburguesa está abierto
   const [menuAbierto, setMenuAbierto] = useState(false);
 
-  // Función para abrir el menú hamburguesa
   const abrirMenu = () => setMenuAbierto(true);
-
-  // Función para cerrar el menú hamburguesa
   const cerrarMenu = () => setMenuAbierto(false);
 
-  // Función que cambia la vista y cierra automáticamente el menú
+  // Cambia de vista y cierra el menú automáticamente
   const cambiarVista = (nuevaVista) => {
     setVista(nuevaVista);
     cerrarMenu();
   };
 
+  // Devuelve el título según la vista actual
+  const getTitle = () => {
+    if (vista === 'profesor') return 'Vista Profesor';
+    if (vista === 'estudiante') return 'Vista Estudiante';
+    if (vista === 'resultado') return 'Vista Resultado';
+    return 'Smart Attendance';
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    // Envuelve toda la app con el proveedor de contexto
+    <AsistenciaProvider>
 
-      {/* Header superior con botón de menú hamburguesa y título dinámico */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={abrirMenu} style={styles.hamburger}>
-          <Text style={styles.hamburgerText}>☰</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>
-          {vista === 'profesor' && 'Vista Profesor'}
-          {vista === 'estudiante' && 'Vista Estudiante'}
-          {vista === 'resultado' && 'Vista Resultado'}
-        </Text>
-      </View>
+      <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
 
-      {/* Área principal donde se muestra la vista seleccionada */}
-      <View style={{ flex: 1 }}>
-        {vista === 'profesor' && <ProfesorView />}
-        {vista === 'estudiante' && <EstudianteView />}
-        {vista === 'resultado' && <ResultadoView />}
-      </View>
-
-      {/* Menú Hamburguesa (se muestra solo cuando menuAbierto es true) */}
-      {menuAbierto && (
-        <View style={styles.overlay}>
-
-          {/* Fondo semi-transparente que cubre toda la pantalla (al tocarlo se cierra el menú) */}
-          <TouchableOpacity 
-            style={styles.overlayBackground} 
-            activeOpacity={1}
-            onPress={cerrarMenu}
-          />
-
-          {/* El menú que se desliza desde la izquierda */}
-          <View style={styles.menu}>
-            <Text style={styles.menuTitle}>Menú</Text>
-
-            {/* Opción para ir a la vista Profesor */}
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => cambiarVista('profesor')}
-            >
-              <Text style={styles.menuText}>Profesor</Text>
-            </TouchableOpacity>
-
-            {/* Opción para ir a la vista Estudiante */}
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => cambiarVista('estudiante')}
-            >
-              <Text style={styles.menuText}>Estudiante</Text>
-            </TouchableOpacity>
-
-            {/* Opción para ir a la vista Resultado */}
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => cambiarVista('resultado')}
-            >
-              <Text style={styles.menuText}>Resultado</Text>
-            </TouchableOpacity>
-
-            {/* Botón para cerrar el menú manualmente */}
-            <TouchableOpacity 
-              style={[styles.menuItem, { marginTop: 30 }]}
-              onPress={cerrarMenu}
-            >
-              <Text style={[styles.menuText, { color: 'red' }]}>Cerrar menú</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Header con botón de menú */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={abrirMenu} style={styles.hamburger}>
+            <Text style={styles.hamburgerText}>☰</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>
+            {getTitle()}
+          </Text>
         </View>
-      )}
-    </View>
+
+        {/* Muestra la vista seleccionada */}
+        <View style={{ flex: 1 }}>
+          {vista === 'profesor' && <ProfesorView />}
+          {vista === 'estudiante' && <EstudianteView />}
+          {vista === 'resultado' && <ResultadoView />}
+        </View>
+
+        {/* Menú Hamburguesa (se muestra solo cuando menuAbierto es true) */}
+        {menuAbierto && (
+          <View style={styles.overlay}>
+
+            {/* Fondo oscuro que cierra el menú al tocarlo */}
+            <TouchableOpacity 
+              style={styles.overlayBackground} 
+              activeOpacity={1}
+              onPress={cerrarMenu}
+            />
+
+            {/* Panel del menú */}
+            <View style={styles.menu}>
+              <Text style={styles.menuTitle}>Menú</Text>
+
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => cambiarVista('profesor')}
+              >
+                <Text style={styles.menuText}>Profesor</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => cambiarVista('estudiante')}
+              >
+                <Text style={styles.menuText}>Estudiante</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => cambiarVista('resultado')}
+              >
+                <Text style={styles.menuText}>Resultado</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.menuItem, { marginTop: 30 }]}
+                onPress={cerrarMenu}
+              >
+                <Text style={[styles.menuText, { color: 'red' }]}>Cerrar menú</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+      </View>
+
+    </AsistenciaProvider>
   );
 }
 
-// Estilos del componente
+// ==================== ESTILOS ====================
 const styles = StyleSheet.create({
   header: {
     height: 60,
@@ -133,7 +141,7 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFillObject,   // Cubre toda la pantalla
     zIndex: 100,
   },
   overlayBackground: {
